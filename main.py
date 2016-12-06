@@ -11,6 +11,7 @@ import threading
 import Tkinter as tk
 
 from UI.MainFrm import MainFrame
+from Utils.SerialHelper import SerialHelper
 
 # 根据系统 引用不同的库
 if platform.system() == "Windows":
@@ -43,6 +44,8 @@ class MainSlaveTool(MainFrame):
         self.usb_listbox = list()
         self.serial_listbox = list()
         self.find_all_devices()
+
+        self.receive_count = 0
 
     def find_all_devices(self):
         '''
@@ -133,7 +136,106 @@ class MainSlaveTool(MainFrame):
         '''
         打开/关闭 设备
         '''
-        
+        if self.frm_top_btn_change["text"] == "USB":  # Serial
+            self.serial_toggle()
+
+    def serial_toggle(self):
+        '''
+        打开/关闭串口设备
+        '''
+        if self.serial_frm.frm_left_btn["text"] == "Open":
+            try:
+                self.currentStrCom = self.serial_frm.frm_left_listbox.get(self.serial_frm.frm_left_listbox.curselection())
+                if platform.system() == "Windows":
+                    self.port = self.currentStrCom.split(":")[0]
+                elif platform.system() == "Linux":
+                    self.port = self.currentStrCom
+                self.baudrate = self.serial_frm.frm_left_combobox_baudrate.get()
+                self.parity = self.serial_frm.frm_left_combobox_parity.get()
+                self.databit = self.serial_frm.frm_left_combobox_databit.get()
+                self.stopbit = self.serial_frm.frm_left_combobox_stopbit.get()
+                self.ser = SerialHelper(Port=self.port,
+                                        BaudRate=self.baudrate,
+                                        ByteSize=self.databit,
+                                        Parity=self.parity,
+                                        Stopbits=self.stopbit)
+                self.ser.on_connected_changed(self.serial_on_connected_changed)
+            except Exception as e:
+                logging.error(e)
+                try:
+                    self.frm_status_label["text"] = "Open [{0}] Failed!".format(self.currentStrCom)
+                    self.frm_status_label["fg"] = "#DC143C"
+                except Exception as ex:
+                    logging.error(ex)
+
+        elif self.serial_frm.frm_left_btn["text"] == "Close":
+            self.ser.disconnect()
+            self.serial_frm.frm_left_btn["text"] = "Open"
+            self.serial_frm.frm_left_btn["bg"] = "#008B8B"
+            self.serial_frm.frm_status_label["text"] = "Close Serial Successful!"
+            self.serial_frm.frm_status_label["fg"] = "#8DEEEE"
+
+    def Send(self):
+        '''
+        发送数据
+        '''
+        if self.frm_top_btn_change["text"] == "USB":  # Serial
+            self.serial_send()
+
+    def serial_send(self):
+        '''
+        串口数据发送
+        '''
+        send_data = self.serial_frm.frm_right_send.get("0.0", "end").strip()
+        self.ser.write(send_data, True)
+
+    def serial_on_connected_changed(self, is_connected):
+        if is_connected:
+            self.ser.connect()
+            if self.ser._is_connected:
+                self.serial_frm.frm_status_label["text"] = "Open [{0}] Successful!".format(self.currentStrCom)
+                self.serial_frm.frm_status_label["fg"] = "#66CD00"
+                self.serial_frm.frm_left_btn["text"] = "Close"
+                self.serial_frm.frm_left_btn["bg"] = "#F08080"
+                self.ser.on_data_received(self.serial_on_data_received)
+            else:
+                self.serial_frm.frm_status_label["text"] = "Open [{0}] Failed!".format(self.currentStrCom)
+                self.serial_frm.frm_status_label["fg"] = "#DC143C"
+        else:
+            self.ser.disconnect()
+            self.serial_frm.frm_left_btn["text"] = "Open"
+            self.serial_frm.frm_left_btn["bg"] = "#008B8B"
+            self.serial_frm.frm_status_label["text"] = "Close Serial Successful!"
+            self.serial_frm.frm_status_label["fg"] = "#8DEEEE"
+
+    def serial_on_data_received(self, data):
+        '''
+        '''
+        self.receive_count += 1
+        self.serial_frm.frm_right_receive.insert("end", "[" + str(datetime.datetime.now()) + " - "
+                                      + str(self.receive_count) + "]:\n", "green")
+        data_str = " ".join([hex(x)[2:].upper().rjust(2, "0") for x in data])
+        self.serial_frm.frm_right_receive.insert("end", data_str + "\n")
+        self.serial_frm.frm_right_receive.see("end")
+
+    def find_usb_tty(self, vendor_id=None, product_id=None):
+        '''
+        查找Linux下的串口设备
+        '''
+        tty_devs = list()
+        for dn in glob.glob('/sys/bus/usb/devices/*') :
+            try:
+                vid = int(open(os.path.join(dn, "idVendor" )).read().strip(), 16)
+                pid = int(open(os.path.join(dn, "idProduct")).read().strip(), 16)
+                if  ((vendor_id is None) or (vid == vendor_id)) and ((product_id is None) or (pid == product_id)) :
+                    dns = glob.glob(os.path.join(dn, os.path.basename(dn) + "*"))
+                    for sdn in dns :
+                        for fn in glob.glob(os.path.join(sdn, "*")) :
+                            if  re.search(r"\/ttyUSB[0-9]+$", fn) :
+                                tty_devs.append(os.path.join("/dev", os.path.basename(fn)))
+            except Exception as ex:
+                pass
+        return tty_devs
 
 if __name__ == '__main__':
     '''

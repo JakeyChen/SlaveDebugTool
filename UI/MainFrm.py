@@ -38,6 +38,8 @@ class MainFrame(object):
         self.create_frm_top()
         self.create_frm_main()
 
+        self.init_serial_frm()
+
     def create_frm_top(self):
         '''
         '''
@@ -111,11 +113,24 @@ class MainFrame(object):
         self.state = not self.state
         self.root.attributes("-fullscreen", self.state)
 
-    def insert_status_info(self, info):
+    def init_serial_frm(self):
         '''
-        main: status txt change
+        init serial frm
         '''
-        self.frm_status_top_label_info["text"] = info
+        self.serial_frm.frm_left_btn["command"] = self.Toggle
+        self.serial_frm.frm_right_send_btn["command"] = self.Send
+
+    def Toggle(self):
+        '''
+        toggle dev
+        '''
+        pass
+
+    def Send(self):
+        '''
+        send msg to dev
+        '''
+        pass
 
     def insert_show_text(self, msg, location="end", color="myblue", newline=True):
         '''
