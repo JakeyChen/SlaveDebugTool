@@ -129,7 +129,7 @@ class SerialFrame(object):
         上半部分右边窗口：
         分为4个部分：
         1、Label显示和重置按钮和发送按钮
-        2、Entry显示（发送的数据）
+        2、Text显示（发送的数据）
         3、Label显示和十进制选择显示和清除接收信息按钮
         4、Text显示接收到的信息
         '''
@@ -185,8 +185,8 @@ class SerialFrame(object):
                                                                font=g_font)
 
         self.frm_right_reset_label.pack(fill="both", expand=1, padx=5, pady=5, side=tk.LEFT)
-        self.frm_right_reset_newLine_checkbtn.pack(fill="both", expand=1, padx=5, pady=5, side=tk.LEFT)
-        self.frm_right_reset_hex_checkbtn.pack(fill="both", expand=1, padx=5, pady=5, side=tk.LEFT)
+        self.frm_right_reset_newLine_checkbtn.pack(fill="both", expand=0, padx=5, pady=5, side=tk.LEFT)
+        self.frm_right_reset_hex_checkbtn.pack(fill="both", expand=0, padx=5, pady=5, side=tk.LEFT)
         self.frm_right_reset_btn.pack(fill="both", expand=0, padx=5, pady=5, side=tk.LEFT)
         self.frm_right_send_btn.pack(fill="both", expand=0, padx=5, pady=5, side=tk.RIGHT)
 
@@ -222,9 +222,9 @@ class SerialFrame(object):
                                                  font=g_font)
 
         self.frm_right_clear_label.pack(fill="both", expand=1, padx=5, pady=5, side=tk.LEFT)
-        self.frm_right_threshold_label.pack(fill="both", expand=1, padx=5, pady=5, side=tk.LEFT)
-        self.frm_right_threshold_entry.pack(fill="both", expand=1, padx=5, pady=5, side=tk.LEFT)
-        self.frm_right_hex_checkbtn.pack(fill="both", expand=1, padx=5, pady=5, side=tk.LEFT)
+        self.frm_right_threshold_label.pack(fill="both", expand=0, padx=5, pady=5, side=tk.LEFT)
+        self.frm_right_threshold_entry.pack(fill="both", expand=0, padx=5, pady=5, side=tk.LEFT)
+        self.frm_right_hex_checkbtn.pack(fill="both", expand=0, padx=5, pady=5, side=tk.LEFT)
         self.frm_right_clear_btn.pack(fill="both", expand=0, padx=5, pady=5, side=tk.RIGHT) 
 
     def create_frm_status(self):
