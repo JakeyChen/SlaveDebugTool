@@ -39,6 +39,7 @@ class MainFrame(object):
         self.create_frm_main()
 
         self.init_serial_frm()
+        self.init_usb_frm()
 
     def create_frm_top(self):
         '''
@@ -124,6 +125,15 @@ class MainFrame(object):
         self.serial_frm.threshold_str.set(1)
         self.serial_frm.threshold_str.trace('w', self.get_threshold_value)
 
+    def init_usb_frm(self):
+        '''
+        init serial frm
+        '''
+        self.usb_frm.frm_left_btn["command"] = self.Toggle
+        self.usb_frm.frm_left_listbox.bind("<Double-Button-1>", self.Toggle)
+        self.usb_frm.frm_right_send_btn["command"] = self.Send
+        self.usb_frm.frm_right_clear_btn["command"] = self.UsbClear
+
     def Toggle(self, event=None):
         '''
         toggle dev
@@ -142,21 +152,27 @@ class MainFrame(object):
         '''
         pass
 
+    def UsbClear(self):
+        '''
+        clear usb recieve text
+        '''
+        pass
+
     def get_threshold_value(self, *args):
         '''
         get threshold value
         '''
         pass
 
-    def insert_show_text(self, msg, location="end", color="myblue", newline=True):
-        '''
-        test: test info show insert
-        '''
-        self.test_frm.frm_top_txt_show.insert(location, msg, color)
-        if newline:
-            self.test_frm.frm_top_txt_show.insert("end", "\n")
-        self.test_frm.frm_top_txt_show.see("end")
-        self.test_frm.frm_top_txt_show.update()
+    # def insert_show_text(self, msg, location="end", color="myblue", newline=True):
+    #     '''
+    #     test: test info show insert
+    #     '''
+    #     self.test_frm.frm_top_txt_show.insert(location, msg, color)
+    #     if newline:
+    #         self.test_frm.frm_top_txt_show.insert("end", "\n")
+    #     self.test_frm.frm_top_txt_show.see("end")
+    #     self.test_frm.frm_top_txt_show.update()
 
     def start_thread_timer(self, callback, timer=1):
         '''

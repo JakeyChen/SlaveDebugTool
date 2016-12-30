@@ -138,13 +138,13 @@ class UsbFrame(object):
         line_frm_4.pack(fill="both", expand=1, pady=1)
         for i in range(64):
             temp_str = tk.StringVar()
-            if i//16 == 0:
+            if i // 16 == 0:
                 master = line_frm_1
-            elif i//16 == 1:
+            elif i // 16 == 1:
                 master = line_frm_2
-            elif i//16 == 2:
+            elif i // 16 == 2:
                 master = line_frm_3
-            elif i//16 == 3:
+            elif i // 16 == 3:
                 master = line_frm_4
 
             temp_entry = pytk.PyEntry(master,
@@ -160,14 +160,14 @@ class UsbFrame(object):
         '''
         3、Label显示和清除接收信息按钮
         '''
-        self.checkValue = tk.IntVar()
+        self.check_value = tk.IntVar()
         self.frm_right_clear_label = pytk.PyLabel(self.frm_right_clear,
                                                   text="Data Received",
                                                   anchor="w",
                                                   font=g_font)
         self.frm_right_decimal_checkbtn = pytk.PyCheckbutton(self.frm_right_clear,
                                                              text="Decimal",
-                                                             variable=self.checkValue,
+                                                             variable=self.check_value,
                                                              relief="flat",
                                                              font=g_font)
         self.frm_right_clear_btn = pytk.PyButton(self.frm_right_clear,

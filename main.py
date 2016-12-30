@@ -39,14 +39,18 @@ class MainSlaveTool(MainFrame):
         super(MainSlaveTool, self).__init__(master)
         self.root = master
 
+        self.serial_receive_count = 0
+        self.serial_recieve_data = ""
+        self.serial_listbox = list()
+
         self.vid = None
         self.pid = None
         self.usb_listbox = list()
-        self.serial_listbox = list()
-        self.find_all_devices()
+        self.usb_dev = None
+        self.usb_receive_count = 0
+        self.usb_recieve_data = ""
 
-        self.serial_receive_count = 0
-        self.serial_recieve_data = ""
+        self.find_all_devices()
 
     # start ---- 轮循设备是否连接 ---- 
     def find_all_devices(self):
@@ -88,8 +92,8 @@ class MainSlaveTool(MainFrame):
 
             # 检测到usb设备被拔出时，关闭usb设备
             if self.pid and self.vid:
-                _vid = self.fill_zero(hex(self.vid)[2:])
-                _pid = self.fill_zero(hex(self.pid)[2:])
+                _vid = hex(self.vid)[2:].rjust(4, "0")
+                _pid = hex(self.pid)[2:].rjust(4, "0")
                 dev_info = "VID:{0} PID:{1}".format(_vid, _pid)
                 if dev_info not in self.temp_usb_list:
                     self.Toggle()
@@ -141,6 +145,8 @@ class MainSlaveTool(MainFrame):
         '''
         if self.frm_top_btn_change["text"] == "USB":  # Serial
             self.serial_toggle()
+        elif self.frm_top_btn_change["text"] == "Serial":  # USB
+            self.usb_toggle()
 
     def Send(self):
         '''
@@ -148,8 +154,184 @@ class MainSlaveTool(MainFrame):
         '''
         if self.frm_top_btn_change["text"] == "USB":  # Serial
             self.serial_send()
+        elif self.frm_top_btn_change["text"] == "Serial":  # USB
+            self.usb_send()
 
-    # start ---- Serial ---- 
+    # start ---- usb ---- 
+    def UsbClear(self):
+        '''
+        clear usb receive text
+        '''
+        self.usb_receive_count = 0
+        self.usb_frm.frm_right_receive.delete("0.0", "end")
+
+    def usb_toggle(self):
+        '''
+        open/close usb device
+        '''
+        if self.usb_frm.frm_left_btn["text"] == "Open":
+            try:
+                try:
+                    self.current_usb_info = self.usb_frm.frm_left_listbox.get(self.usb_frm.frm_left_listbox.curselection())
+                except:
+                    self.usb_frm.frm_status_label["text"] = "Please select device first!"
+                    return
+
+                self.vid = int(self.current_usb_info[4:8], 16)
+                self.pid = int(self.current_usb_info[13:17], 16)
+
+                if platform.system() == "Windows":
+                    self.usb_dev = hidHelper(self.vid, self.pid)
+                    self.usb_dev.start()
+                    if self.usb_dev.device:
+                        self.usb_dev.device.set_raw_data_handler(self.winusb_on_data_received)
+                    self.usb_frm.frm_status_label["text"] = "Open Device [{0}] Successful!".format(self.current_usb_info)
+                    self.usb_frm.frm_status_label["fg"] = "#66CD00"
+                    self.usb_frm.frm_left_btn["text"] = "Close"
+                    self.usb_frm.frm_left_btn["bg"] = "#F08080"
+                else:
+                    self.usb_dev = usbHelper(self.vid, self.pid)
+                    self.usb_dev.on_connected_changed(self.usb_on_connected_changed)
+            except Exception as e:
+                logging.error(e)
+        elif self.usb_frm.frm_left_btn["text"] == "Close":
+            if platform.system() == "Windows":
+                try:
+                    if hasattr(self.usb_dev, "stop"):
+                        self.usb_dev.stop()
+                except Exception as e:
+                    logging.error(e)
+            elif platform.system() == "Linux":
+                try:
+                    self.usb_dev.disconnect()
+                except Exception as e:
+                    logging.error(e)
+            self.usb_frm.frm_left_btn["text"] = "Open"
+            self.usb_frm.frm_left_btn["bg"] = "#008B8B"
+            self.usb_frm.frm_status_label["text"] = "Close USB Device [{0}] Successful!".format(self.current_usb_info)
+            self.usb_frm.frm_status_label["fg"] = "#8DEEEE"
+
+    def usb_send(self):
+        '''
+        发送数据
+        '''
+        send_list = self.get_send_list()
+        if self.usb_dev:
+            try:
+                if platform.system() == "Windows":
+                    send_list.insert(0, 0x00)
+                self.usb_dev.write(send_list)
+            except Exception as e:
+                self.usb_frm.frm_right_receive.insert("end", str(e) + "\n")
+                self.usb_frm.frm_right_receive.see("end")
+        else:
+            self.usb_frm.frm_right_receive.insert("end", "Please open usb device first!")
+            self.usb_frm.frm_right_receive.see("end")
+
+    def get_send_list(self):
+        '''
+        获取64个entry的数据组成发送的列表
+        '''
+        send_list = list()
+        temp_list = list()
+        for entry in self.usb_frm.entry_list:
+            temp_list.append(entry.get())
+        for i in temp_list:
+            try:
+                temp_value = int(i, 16)
+            except:
+                temp_value = 0
+            send_list.append(temp_value)
+        if len(send_list) == 64:
+            return send_list
+        else:
+            return [0 for i in range(64)]
+
+    def usb_on_connected_changed(self, is_connected):
+        '''
+        usb状态改变回调函数
+        '''
+        if is_connected:
+            self.usb_dev.connect()
+            self.usb_dev.on_data_received(self.usb_on_data_received)
+            self.usb_frm.frm_status_label["text"] = "Open Device [{0}] Successful!".format(self.current_usb_info)
+            self.usb_frm.frm_status_label["fg"] = "#66CD00"
+            self.usb_frm.frm_left_btn["text"] = "Close"
+            self.usb_frm.frm_left_btn["bg"] = "#F08080"
+        else:
+            self.usb_dev.disconnect()
+            self.usb_frm.frm_left_btn["text"] = "Open"
+            self.usb_frm.frm_left_btn["bg"] = "#008B8B"
+            self.usb_frm.frm_status_label["text"] = "Close USB Device [{0}] Successful!".format(self.current_usb_info)
+            self.usb_frm.frm_status_label["fg"] = "#8DEEEE"
+
+    def usb_on_data_received(self, data):
+        '''
+        usb接收数据回调函数
+        '''
+        try:
+            self.usb_receive_count += 1
+
+            if self.usb_frm.check_value.get() == 0:
+                temp_string = self.list_str_format(data)
+            else:
+                temp_string = self.list_str_format(data, lineNum=16, strFormat="int")
+            self.usb_frm.frm_right_receive.insert("end", "[" + str(datetime.datetime.now()) +
+                                                  " - " + str(self.usb_receive_count) + "]:\n", "green")
+            self.usb_frm.frm_right_receive.insert("end", temp_string)
+            self.usb_frm.frm_right_receive.see("end")
+        except Exception as e:
+            logging.error(e)
+
+    def winusb_on_data_received(self, data):
+        '''
+        winusb接收数据回调函数
+        '''
+        try:
+            temp_list = data[1:]
+            self.usb_receive_count += 1
+
+            if self.usb_frm.check_value.get() == 0:
+                temp_string = self.list_str_format(temp_list)
+            else:
+                temp_string = self.list_str_format(temp_list, lineNum=16, strFormat="int")
+            self.usb_frm.frm_right_receive.insert("end", "[" + str(datetime.datetime.now()) +
+                                                  " - " + str(self.usb_receive_count) + "]:\n", "green")
+            self.usb_frm.frm_right_receive.insert("end", temp_string)
+            self.usb_frm.frm_right_receive.see("end")
+        except Exception as e:
+            logging.error(e)
+
+    def list_str_format(self, receive_list, lineNum=16, strFormat="str"):
+        '''
+        格式化接收数据，按照自己想要的格式输出
+        '''
+        hex(dev.idProduct)[2:].rjust(4, "0")
+        temp_string = ""
+        if strFormat == "str":
+            for index, item in enumerate(receive_list):
+                item = hex(item)[2:].rjust(2, "0")
+                temp_string += "%-5s" % item
+                if (index + 1) % 16 == 0:
+                    temp_string += "\n"
+            return temp_string
+        else:
+            for index, item in enumerate(receive_list):
+                item = str(item).rjust(3, "0")
+                temp_string += "%-5s" % item
+                if (index + 1) % 16 == 0:
+                    temp_string += "\n"
+            return temp_string
+    # end ---- usb ---- 
+
+    # start ---- serial ---- 
+    def SerialClear(self):
+        '''
+        clear serial receive text
+        '''
+        self.serial_receive_count = 0
+        self.serial_frm.frm_right_receive.delete("0.0", "end")
+
     def serial_toggle(self):
         '''
         打开/关闭串口设备
@@ -158,14 +340,14 @@ class MainSlaveTool(MainFrame):
             try:
                 serial_index = self.serial_frm.frm_left_listbox.curselection()
                 if serial_index:
-                    self.currentStrCom = self.serial_frm.frm_left_listbox.get(serial_index).encode("utf-8")
+                    self.current_serial_str = self.serial_frm.frm_left_listbox.get(serial_index).encode("utf-8")
                 else:
-                    self.currentStrCom = self.serial_frm.frm_left_listbox.get(self.serial_frm.frm_left_listbox.size() - 1).encode("utf-8")
+                    self.current_serial_str = self.serial_frm.frm_left_listbox.get(self.serial_frm.frm_left_listbox.size() - 1).encode("utf-8")
 
                 if platform.system() == "Windows":
-                    self.port = self.currentStrCom.split(":")[0]
+                    self.port = self.current_serial_str.split(":")[0]
                 elif platform.system() == "Linux":
-                    self.port = self.currentStrCom
+                    self.port = self.current_serial_str
                 self.baudrate = self.serial_frm.frm_left_combobox_baudrate.get()
                 self.parity = self.serial_frm.frm_left_combobox_parity.get()
                 self.databit = self.serial_frm.frm_left_combobox_databit.get()
@@ -179,8 +361,8 @@ class MainSlaveTool(MainFrame):
             except Exception as e:
                 logging.error(e)
                 try:
-                    self.frm_status_label["text"] = "Open [{0}] Failed!".format(self.currentStrCom)
-                    self.frm_status_label["fg"] = "#DC143C"
+                    self.serial_frm.frm_status_label["text"] = "Open [{0}] Failed!".format(self.current_serial_str)
+                    self.serial_frm.frm_status_label["fg"] = "#DC143C"
                 except Exception as ex:
                     logging.error(ex)
 
@@ -190,13 +372,6 @@ class MainSlaveTool(MainFrame):
             self.serial_frm.frm_left_btn["bg"] = "#008B8B"
             self.serial_frm.frm_status_label["text"] = "Close Serial Successful!"
             self.serial_frm.frm_status_label["fg"] = "#8DEEEE"
-
-    def SerialClear(self):
-        '''
-        clear serial receive text
-        '''
-        self.serial_receive_count = 0
-        self.serial_frm.frm_right_receive.delete("0.0", "end")
 
     def get_threshold_value(self, *args):
         '''
@@ -222,16 +397,19 @@ class MainSlaveTool(MainFrame):
             self.ser.write(send_data)
 
     def serial_on_connected_changed(self, is_connected):
+        '''
+        串口连接状态改变回调
+        '''
         if is_connected:
             self.ser.connect()
             if self.ser._is_connected:
-                self.serial_frm.frm_status_label["text"] = "Open [{0}] Successful!".format(self.currentStrCom)
+                self.serial_frm.frm_status_label["text"] = "Open [{0}] Successful!".format(self.current_serial_str)
                 self.serial_frm.frm_status_label["fg"] = "#66CD00"
                 self.serial_frm.frm_left_btn["text"] = "Close"
                 self.serial_frm.frm_left_btn["bg"] = "#F08080"
                 self.ser.on_data_received(self.serial_on_data_received)
             else:
-                self.serial_frm.frm_status_label["text"] = "Open [{0}] Failed!".format(self.currentStrCom)
+                self.serial_frm.frm_status_label["text"] = "Open [{0}] Failed!".format(self.current_serial_str)
                 self.serial_frm.frm_status_label["fg"] = "#DC143C"
         else:
             self.ser.disconnect()
@@ -242,6 +420,7 @@ class MainSlaveTool(MainFrame):
 
     def serial_on_data_received(self, data):
         '''
+        串口接收数据回调函数
         '''
         self.serial_recieve_data += data
         if self.ser.threshold_value <= len(self.serial_recieve_data):
@@ -277,7 +456,7 @@ class MainSlaveTool(MainFrame):
             except Exception as ex:
                 pass
         return tty_devs
-    # end ---- Serial ---- 
+    # end ---- serial ---- 
 
 if __name__ == '__main__':
     '''

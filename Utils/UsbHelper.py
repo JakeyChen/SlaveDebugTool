@@ -45,9 +45,9 @@ class usbHelper(object):
         if self._handle:
             self._handle.releaseInterface()
 
-    def write(self, send_list, timeout=4000):
+    def write(self, send_list, timeout=3000):
         '''
-        write data to usb device,default timeout=4000ms=4s
+        write data to usb device,default timeout=3000ms=3s
         '''
         if self._handle:
             num = self._handle.interruptWrite(self.ep_out, send_list, timeout)
