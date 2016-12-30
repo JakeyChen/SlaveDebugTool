@@ -24,7 +24,7 @@ class SerialHelper(object):
         self.bytesize = ByteSize
         self.parity = Parity
         self.stopbits = Stopbits
-        self.thresholdValue = 64
+        self.threshold_value = 1
         self.receive_data = ""
 
         self._serial = None
@@ -64,7 +64,7 @@ class SerialHelper(object):
         if self._is_connected:
             if isHex:
                 data = binascii.unhexlify(data)
-            self._serial.write(data)
+            self._serial.write(bytes(data))
 
     def on_connected_changed(self, func):
         '''
@@ -112,7 +112,7 @@ class SerialHelper(object):
                     number = self._serial.inWaiting()
                     data = self._serial.read(number)
                     if data:
-                        func([ord(x) for x in data])
+                        func(data)
                 except Exception as e:
                     self._is_connected = False
                     self._serial = None

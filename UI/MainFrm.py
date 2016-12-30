@@ -118,9 +118,13 @@ class MainFrame(object):
         init serial frm
         '''
         self.serial_frm.frm_left_btn["command"] = self.Toggle
+        self.serial_frm.frm_left_listbox.bind("<Double-Button-1>", self.Toggle)
         self.serial_frm.frm_right_send_btn["command"] = self.Send
+        self.serial_frm.frm_right_clear_btn["command"] = self.SerialClear
+        self.serial_frm.threshold_str.set(1)
+        self.serial_frm.threshold_str.trace('w', self.get_threshold_value)
 
-    def Toggle(self):
+    def Toggle(self, event=None):
         '''
         toggle dev
         '''
@@ -129,6 +133,18 @@ class MainFrame(object):
     def Send(self):
         '''
         send msg to dev
+        '''
+        pass
+
+    def SerialClear(self):
+        '''
+        clear serial recieve text
+        '''
+        pass
+
+    def get_threshold_value(self, *args):
+        '''
+        get threshold value
         '''
         pass
 

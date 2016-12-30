@@ -45,8 +45,10 @@ class MainSlaveTool(MainFrame):
         self.serial_listbox = list()
         self.find_all_devices()
 
-        self.receive_count = 0
+        self.serial_receive_count = 0
+        self.serial_recieve_data = ""
 
+    # start ---- 轮循设备是否连接 ---- 
     def find_all_devices(self):
         '''
         线程检测连接设备的状态
@@ -104,8 +106,8 @@ class MainSlaveTool(MainFrame):
         try:
             if platform.system() == "Windows":
                 self.temp_serial = list()
-                for com in list_ports.comports():
-                    strCom = com[0] + ": " + com[1][:-7].decode("gbk").encode("utf-8")
+                for com in list(list_ports.comports()):
+                    strCom = com[0].encode("utf-8") + ": " + com[1][:-7].encode("utf-8")
                     self.temp_serial.append(strCom)
                 for item in self.temp_serial:
                     if item not in self.serial_listbox:
@@ -131,21 +133,35 @@ class MainSlaveTool(MainFrame):
                 self.serial_listbox = self.temp_serial
         except Exception as e:
             logging.error(e)
+    # end ---- 轮循设备是否连接 ---- 
 
-    def Toggle(self):
+    def Toggle(self, event=None):
         '''
         打开/关闭 设备
         '''
         if self.frm_top_btn_change["text"] == "USB":  # Serial
             self.serial_toggle()
 
+    def Send(self):
+        '''
+        发送数据
+        '''
+        if self.frm_top_btn_change["text"] == "USB":  # Serial
+            self.serial_send()
+
+    # start ---- Serial ---- 
     def serial_toggle(self):
         '''
         打开/关闭串口设备
         '''
         if self.serial_frm.frm_left_btn["text"] == "Open":
             try:
-                self.currentStrCom = self.serial_frm.frm_left_listbox.get(self.serial_frm.frm_left_listbox.curselection())
+                serial_index = self.serial_frm.frm_left_listbox.curselection()
+                if serial_index:
+                    self.currentStrCom = self.serial_frm.frm_left_listbox.get(serial_index).encode("utf-8")
+                else:
+                    self.currentStrCom = self.serial_frm.frm_left_listbox.get(self.serial_frm.frm_left_listbox.size() - 1).encode("utf-8")
+
                 if platform.system() == "Windows":
                     self.port = self.currentStrCom.split(":")[0]
                 elif platform.system() == "Linux":
@@ -175,19 +191,35 @@ class MainSlaveTool(MainFrame):
             self.serial_frm.frm_status_label["text"] = "Close Serial Successful!"
             self.serial_frm.frm_status_label["fg"] = "#8DEEEE"
 
-    def Send(self):
+    def SerialClear(self):
         '''
-        发送数据
+        clear serial receive text
         '''
-        if self.frm_top_btn_change["text"] == "USB":  # Serial
-            self.serial_send()
+        self.serial_receive_count = 0
+        self.serial_frm.frm_right_receive.delete("0.0", "end")
+
+    def get_threshold_value(self, *args):
+        '''
+        get threshold value
+        '''
+        try:
+            self.ser.threshold_value = int(self.serial_frm.threshold_str.get())
+        except:
+            pass
 
     def serial_send(self):
         '''
-        串口数据发送
+        串口数据发送 CR 13; NL(LF) 10
         '''
         send_data = self.serial_frm.frm_right_send.get("0.0", "end").strip()
-        self.ser.write(send_data, True)
+        if self.serial_frm.new_line_cbtn_var.get() == 1:  # 是否添加换行符
+            send_data = send_data + "\n"
+
+        if self.serial_frm.send_hex_cbtn_var.get() == 1:  # 是否使用16进制发送
+            send_data = send_data.replace(" ", "").replace("\n", "10")
+            self.ser.write(send_data, True)
+        else:
+            self.ser.write(send_data)
 
     def serial_on_connected_changed(self, is_connected):
         if is_connected:
@@ -211,12 +243,21 @@ class MainSlaveTool(MainFrame):
     def serial_on_data_received(self, data):
         '''
         '''
-        self.receive_count += 1
-        self.serial_frm.frm_right_receive.insert("end", "[" + str(datetime.datetime.now()) + " - "
-                                      + str(self.receive_count) + "]:\n", "green")
-        data_str = " ".join([hex(x)[2:].upper().rjust(2, "0") for x in data])
-        self.serial_frm.frm_right_receive.insert("end", data_str + "\n")
-        self.serial_frm.frm_right_receive.see("end")
+        self.serial_recieve_data += data
+        if self.ser.threshold_value <= len(self.serial_recieve_data):
+            if self.serial_frm.receive_hex_cbtn_var.get() == 1:
+                self.serial_frm.frm_right_receive.insert("end", "[" + str(datetime.datetime.now()) + " - "
+                                              + str(self.serial_receive_count) + "]:\n", "green")
+                data_str = " ".join([hex(ord(x))[2:].upper().rjust(2, "0") for x in self.serial_recieve_data])
+                self.serial_frm.frm_right_receive.insert("end", data_str + "\n")
+                self.serial_frm.frm_right_receive.see("end")
+            else:
+                self.serial_frm.frm_right_receive.insert("end", "[" + str(datetime.datetime.now()) + " - "
+                                              + str(self.serial_receive_count) + "]:\n", "green")
+                self.serial_frm.frm_right_receive.insert("end", self.serial_recieve_data + "\n")
+                self.serial_frm.frm_right_receive.see("end")
+            self.serial_receive_count += 1
+            self.serial_recieve_data = ""
 
     def find_usb_tty(self, vendor_id=None, product_id=None):
         '''
@@ -236,6 +277,7 @@ class MainSlaveTool(MainFrame):
             except Exception as ex:
                 pass
         return tty_devs
+    # end ---- Serial ---- 
 
 if __name__ == '__main__':
     '''

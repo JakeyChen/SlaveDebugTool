@@ -203,9 +203,9 @@ class SerialFrame(object):
                                                       text="Threshold:",
                                                       font=g_font)
 
-        self.thresholdStr = tk.StringVar()
+        self.threshold_str = tk.StringVar()
         self.frm_right_threshold_entry = pytk.PyEntry(self.frm_right_clear,
-                                                      textvariable=self.thresholdStr,
+                                                      textvariable=self.threshold_str,
                                                       width=6,
                                                       font=g_font)
 
@@ -219,14 +219,13 @@ class SerialFrame(object):
         self.frm_right_clear_btn = pytk.PyButton(self.frm_right_clear,
                                                  text="Clear",
                                                  width=10,
-                                                 font=g_font,
-                                                 command=self.Clear)
+                                                 font=g_font)
 
         self.frm_right_clear_label.pack(fill="both", expand=1, padx=5, pady=5, side=tk.LEFT)
         self.frm_right_threshold_label.pack(fill="both", expand=1, padx=5, pady=5, side=tk.LEFT)
         self.frm_right_threshold_entry.pack(fill="both", expand=1, padx=5, pady=5, side=tk.LEFT)
         self.frm_right_hex_checkbtn.pack(fill="both", expand=1, padx=5, pady=5, side=tk.LEFT)
-        self.frm_right_clear_btn.pack(fill="both", expand=0, padx=5, pady=5, side=tk.RIGHT)
+        self.frm_right_clear_btn.pack(fill="both", expand=0, padx=5, pady=5, side=tk.RIGHT) 
 
     def create_frm_status(self):
         '''
@@ -248,9 +247,6 @@ class SerialFrame(object):
 
     def Send(self):
         pass
-
-    def Clear(self):
-        self.frm_right_receive.delete("0.0", "end")
 
 if __name__ == '__main__':
     '''
