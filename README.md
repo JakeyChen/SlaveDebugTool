@@ -34,7 +34,7 @@
 
 ![](http://git.oschina.net/jakey.chen/SlaveDebugTool/tree/master/Images/ubuntu_usb.png)
 
-![](http://git.oschina.net/jakey.chen/SlaveDebugTool/tree/master/Images/ubuntu_serial.png)
+![](http://git.oschina.net/jakey.chen/SlaveDebugTool/blob/master/Images/ubuntu_serial.png?dir=0&filepath=Images%2Fubuntu_serial.png&oid=113f2396afb612f2921b7bff026ba2074a698b7a&sha=fe36a0c3b2b42c72369ac0a1e6849fb38ccb66c2)
 
 
 # 使用技巧 (Serial)
