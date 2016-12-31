@@ -17,9 +17,9 @@
 
 >pip install pywinusb 
 
-![](http://git.oschina.net/jakey.chen/SlaveDebugTool/tree/master/Images/win8_usb.png)
+![](http://git.oschina.net/jakey.chen/SlaveDebugTool/raw/master/Images/win8_usb.png)
 
-![](http://git.oschina.net/jakey.chen/SlaveDebugTool/tree/master/Images/win8_serial.png)
+![](http://git.oschina.net/jakey.chen/SlaveDebugTool/raw/master/Images/win8_serial.png)
 
 
 ## ubuntu下的效果图(Ubuntu 16.04 GNOME)：
@@ -32,9 +32,9 @@
 
 >sudo apt-get install python-tk
 
-![](http://git.oschina.net/jakey.chen/SlaveDebugTool/tree/master/Images/ubuntu_usb.png)
+![](http://git.oschina.net/jakey.chen/SlaveDebugTool/raw/master/Images/ubuntu_usb.png)
 
-![](http://git.oschina.net/jakey.chen/SlaveDebugTool/blob/master/Images/ubuntu_serial.png)
+![](http://git.oschina.net/jakey.chen/SlaveDebugTool/raw/master/Images/ubuntu_serial.png)
 
 
 # 使用技巧 (Serial)
