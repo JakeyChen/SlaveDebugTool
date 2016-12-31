@@ -86,7 +86,7 @@ class UsbFrame(object):
         self.frm_right_clear = pytk.PyLabelFrame(self.frm_right)
         self.frm_right_receive = pytk.PyText(self.frm_right,
                                              font=g_font,
-                                             width=70,
+                                             width=80,
                                              height=15)
 
         self.frm_right_reset.pack(fill="both", expand=0, padx=1)

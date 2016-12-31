@@ -306,7 +306,6 @@ class MainSlaveTool(MainFrame):
         '''
         格式化接收数据，按照自己想要的格式输出
         '''
-        hex(dev.idProduct)[2:].rjust(4, "0")
         temp_string = ""
         if strFormat == "str":
             for index, item in enumerate(receive_list):
