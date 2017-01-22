@@ -111,7 +111,10 @@ class MainSlaveTool(MainFrame):
             if platform.system() == "Windows":
                 self.temp_serial = list()
                 for com in list(list_ports.comports()):
-                    strCom = com[0].encode("utf-8") + ": " + com[1][:-7].encode("utf-8")
+                    try:
+                        strCom = com[0].encode("utf-8") + ": " + com[1][:-7].encode("utf-8")
+                    except:
+                        strCom = com[0] + ": " + com[1][:-7].decode("gbk").encode("utf-8")
                     self.temp_serial.append(strCom)
                 for item in self.temp_serial:
                     if item not in self.serial_listbox:
