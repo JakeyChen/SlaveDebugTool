@@ -221,6 +221,7 @@ class MainSlaveTool(MainFrame):
         send_list = self.get_send_list()
         if self.usb_dev:
             try:
+                logging.info(">>>" + " ".join([hex(x)[2:].rjust(2, "0") for x in send_list]))
                 if platform.system() == "Windows":
                     send_list.insert(0, 0x00)
                 self.usb_dev.write(send_list)
@@ -273,6 +274,7 @@ class MainSlaveTool(MainFrame):
         usb接收数据回调函数
         '''
         try:
+            logging.info("<<<[" + str(self.usb_receive_count) + "]" + " ".join([hex(x)[2:].rjust(2, "0").upper() for x in data]))
             self.usb_receive_count += 1
 
             if self.usb_frm.check_value.get() == 0:
@@ -293,6 +295,7 @@ class MainSlaveTool(MainFrame):
         try:
             temp_list = data[1:]
             self.usb_receive_count += 1
+            logging.info("<<<[" + str(self.usb_receive_count) + "]" + " ".join([hex(x)[2:].rjust(2, "0").upper() for x in temp_list]))
 
             if self.usb_frm.check_value.get() == 0:
                 temp_string = self.list_str_format(temp_list)
@@ -392,6 +395,7 @@ class MainSlaveTool(MainFrame):
         if self.serial_frm.new_line_cbtn_var.get() == 1:  # 是否添加换行符
             send_data = send_data + "\n"
 
+        logging.info(">>>" + str(send_data))
         if self.serial_frm.send_hex_cbtn_var.get() == 1:  # 是否使用16进制发送
             send_data = send_data.replace(" ", "").replace("\n", "10")
             self.ser.write(send_data, True)
@@ -430,12 +434,14 @@ class MainSlaveTool(MainFrame):
                 self.serial_frm.frm_right_receive.insert("end", "[" + str(datetime.datetime.now()) + " - "
                                               + str(self.serial_receive_count) + "]:\n", "green")
                 data_str = " ".join([hex(ord(x))[2:].upper().rjust(2, "0") for x in self.serial_recieve_data])
+                logging.info("<<<" + str(data_str))
                 self.serial_frm.frm_right_receive.insert("end", data_str + "\n")
                 self.serial_frm.frm_right_receive.see("end")
             else:
                 self.serial_frm.frm_right_receive.insert("end", "[" + str(datetime.datetime.now()) + " - "
                                               + str(self.serial_receive_count) + "]:\n", "green")
                 self.serial_frm.frm_right_receive.insert("end", self.serial_recieve_data + "\n")
+                logging.info("<<<" + str(self.serial_recieve_data))
                 self.serial_frm.frm_right_receive.see("end")
             self.serial_receive_count += 1
             self.serial_recieve_data = ""
